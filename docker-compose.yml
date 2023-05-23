@@ -1,0 +1,54 @@
+version: "3"
+services:
+  tesla_event_notifier:
+    container_name: test_1
+    image: test_1
+    restart: always
+    build:
+      context: ./
+      dockerfile: Dockerfile_build
+      args:
+        USER_ID: $USER_ID
+        GROUP_ID: $GROUP_ID
+    volumes:
+      - ./logs:/home/user/app/logs
+      - ./:/home/user/app
+    ports:
+      - 8089:8088
+    command: bash -c "python -m alembic upgrade head && python main.py"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: 50m
+        max-file: "5"
+    networks:
+        - test_1_net
+
+  postgres:
+      image: 'test_1_bd'
+      container_name: 'test_1_bd'
+      restart: always
+      build:
+        context: ./
+        dockerfile: Dockerfile_db
+        args:
+          USER_ID: $USER_ID
+          GROUP_ID: $GROUP_ID
+      env_file:
+       - .env
+      logging:
+        driver: "json-file"
+        options:
+          max-size: 50m
+          max-file: "5"
+      volumes:
+        - ./dbdata:/data
+      ports:
+        - '5433:5432'
+      networks:
+          - test_1_net
+
+
+networks:
+  test_1_net:
+    driver: bridge
